@@ -14,28 +14,37 @@ if (isset($_GET['search'])) {
     $search_query = trim($_GET['search']);
 }
 
-// SQL-Abfrage für die Aufgaben nach Status zählen
-$stmt = $pdo->prepare('
+// SQL-Abfrage für die Statusübersicht (Anzahl der Aufgaben nach Status)
+$status_stmt = $pdo->prepare('
     SELECT 
         (SELECT COUNT(*) FROM tasks WHERE status = "Ausstehend") AS ausstehend,
         (SELECT COUNT(*) FROM tasks WHERE status = "In Bearbeitung") AS in_bearbeitung,
         (SELECT COUNT(*) FROM tasks WHERE status = "Erledigt") AS erledigt
 ');
-$stmt->execute();
-$status_counts = $stmt->fetch(PDO::FETCH_ASSOC);
+$status_stmt->execute();
+$status_counts = $status_stmt->fetch(PDO::FETCH_ASSOC);
 
-// SQL-Abfrage vorbereiten für die Aufgabensuche
+// SQL-Abfrage für die Aufgaben mit benutzerdefinierter Sortierung nach Status
 $sql = "SELECT tasks.*, users.username as creator_name FROM tasks
         LEFT JOIN users ON tasks.created_by = users.id
         WHERE 1";
 
+// Suchfunktion hinzufügen
 $params = [];
-
 if ($search_query != '') {
     $sql .= " AND (tasks.title LIKE :search OR tasks.description LIKE :search OR tasks.status LIKE :search OR tasks.priority LIKE :search OR tasks.objekt LIKE :search OR tasks.einheit LIKE :search)";
     $params[':search'] = '%' . $search_query . '%';
 }
 
+// Sortierung nach Status: In Bearbeitung, Ausstehend, Erledigt
+$sql .= " ORDER BY 
+          CASE 
+              WHEN tasks.status = 'In Bearbeitung' THEN 1
+              WHEN tasks.status = 'Ausstehend' THEN 2
+              WHEN tasks.status = 'Erledigt' THEN 3
+          END";
+
+// Abfrage vorbereiten und ausführen
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -78,7 +87,7 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <button class="btn btn-outline-success" type="submit">Suche</button>
         </form>
 
-        <!-- Statusübersicht -->
+        <!-- Statusübersicht mit einem Bootstrap Alert -->
         <div class="alert alert-info">
             <p>Aufgabenstatus:</p>
             <ul>
