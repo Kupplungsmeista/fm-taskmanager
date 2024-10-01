@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $einheit = $_POST['einheit'];
         $priority = $_POST['priority'];
         $status = $_POST['status'];
-        $due_date = $_POST['due_date'];
+        $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : NULL; // Optionales Feld für Fälligkeitsdatum
         $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : null;
 
         // Validierung, um sicherzustellen, dass ein Objekt ausgewählt ist
@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="mb-3">
                 <label for="due_date" class="form-label">Fälligkeitsdatum</label>
                 <input type="date" class="form-control" id="due_date" name="due_date"
-                    value="<?php echo htmlspecialchars($task['due_date']); ?>" required>
+                    value="<?php echo htmlspecialchars($task['due_date']); ?>">
             </div>
 
             <!-- Monteur-Auswahl -->
@@ -210,7 +210,6 @@ Titel: <?php echo htmlspecialchars($task['title']); ?>
 
 
 Beschreibung: <?php echo htmlspecialchars($task['description']); ?>
-
 
 
 Einsatzort: <?php echo $einsatzort; ?>
