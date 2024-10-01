@@ -28,21 +28,32 @@ if (!$task) {
 
 // Formularverarbeitung beim Abschicken
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = $_POST['title'];
-    $description = $_POST['description'];
-    $objekt = $_POST['objekt'];
-    $einheit = $_POST['einheit'];
-    $priority = $_POST['priority'];
-    $status = $_POST['status'];
-    $due_date = $_POST['due_date'];
+    if (isset($_POST['delete'])) {
+        // Aufgabe löschen
+        $stmt = $pdo->prepare('DELETE FROM tasks WHERE id = ?');
+        $stmt->execute([$task_id]);
 
-    // Update SQL-Abfrage
-    $stmt = $pdo->prepare('UPDATE tasks SET title = ?, description = ?, objekt = ?, einheit = ?, priority = ?, status = ?, due_date = ? WHERE id = ?');
-    $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $task_id]);
+        // Nach dem Löschen zur Übersicht weiterleiten
+        header('Location: overview.php');
+        exit();
+    } else {
+        // Aufgabe bearbeiten
+        $title = $_POST['title'];
+        $description = $_POST['description'];
+        $objekt = $_POST['objekt'];
+        $einheit = $_POST['einheit'];
+        $priority = $_POST['priority'];
+        $status = $_POST['status'];
+        $due_date = $_POST['due_date'];
 
-    // Nach dem Speichern zur Übersicht weiterleiten
-    header('Location: overview.php');
-    exit();
+        // Update SQL-Abfrage
+        $stmt = $pdo->prepare('UPDATE tasks SET title = ?, description = ?, objekt = ?, einheit = ?, priority = ?, status = ?, due_date = ? WHERE id = ?');
+        $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $task_id]);
+
+        // Nach dem Speichern zur Übersicht weiterleiten
+        header('Location: overview.php');
+        exit();
+    }
 }
 ?>
 
@@ -104,7 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Speichern Button -->
             <button type="submit" class="btn btn-primary">Speichern</button>
-            
+
+            <!-- Lösch-Button -->
+            <button type="submit" name="delete" class="btn btn-danger">Löschen</button>
+
             <!-- Zurück zur Übersicht Button -->
             <a href="overview.php" class="btn btn-secondary">Zurück zur Übersicht</a>
         </form>
