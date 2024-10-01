@@ -53,6 +53,7 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <title>Aufgabenübersicht</title>
@@ -62,11 +63,13 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
         table tr {
             cursor: pointer;
         }
+
         table tr:hover {
             background-color: #f5f5f5;
         }
     </style>
 </head>
+
 <body>
     <!-- Navigationsleiste -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -84,7 +87,8 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <!-- Suchfeld -->
         <form method="GET" class="d-flex mb-3">
-            <input class="form-control me-2" type="search" name="search" placeholder="Suche" aria-label="Search" value="<?php echo htmlspecialchars($search_query); ?>">
+            <input class="form-control me-2" type="search" name="search" placeholder="Suche" aria-label="Search"
+                value="<?php echo htmlspecialchars($search_query); ?>">
             <button class="btn btn-outline-success" type="submit">Suche</button>
         </form>
 
@@ -111,7 +115,7 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <th>Priorität</th>
                     <th>Status</th>
                     <th>Fälligkeitsdatum</th>
-                    <th>Monteur</th> <!-- Neue Spalte für Monteur -->
+                    <th>Monteur</th>
                     <th>Eintragungsdatum</th>
                     <th>Ersteller</th>
                 </tr>
@@ -125,7 +129,7 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <td><?php echo htmlspecialchars($task['priority']); ?></td>
                         <td><?php echo htmlspecialchars($task['status']); ?></td>
                         <td><?php echo date('d.m.Y', strtotime($task['due_date'])); ?></td>
-                        <td><?php echo htmlspecialchars($task['monteur_name'] ?: 'Kein Monteur'); ?></td> <!-- Monteur anzeigen -->
+                        <td><?php echo htmlspecialchars($task['monteur_name'] ?: 'Kein Monteur'); ?></td>
                         <td><?php echo date('d.m.Y H:i', strtotime($task['created_at'])); ?></td>
                         <td><?php echo htmlspecialchars($task['creator_name']); ?></td>
                     </tr>
@@ -134,4 +138,5 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </table>
     </div>
 </body>
+
 </html>
