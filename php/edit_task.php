@@ -31,6 +31,11 @@ $stmt = $pdo->prepare('SELECT * FROM monteurs');
 $stmt->execute();
 $monteurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Objekte abrufen
+$stmt = $pdo->prepare('SELECT * FROM objekte');
+$stmt->execute();
+$objekte = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Funktion zur Ermittlung des Einsatzortes
 $einsatzort = htmlspecialchars($task['objekt']);
 if ($task['einheit'] !== '-') {
@@ -56,15 +61,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $priority = $_POST['priority'];
         $status = $_POST['status'];
         $due_date = $_POST['due_date'];
-        $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : NULL; // Monteur bearbeiten
+        $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : NULL;
 
-        // Update SQL-Abfrage
-        $stmt = $pdo->prepare('UPDATE tasks SET title = ?, description = ?, objekt = ?, einheit = ?, priority = ?, status = ?, due_date = ?, monteur_id = ? WHERE id = ?');
-        $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $monteur_id, $task_id]);
+        // Validierung, um sicherzustellen, dass ein Objekt ausgewählt ist
+        if ($objekt === 'none') {
+            $error = "Bitte wähle ein Objekt aus.";
+        } else {
+            // Update SQL-Abfrage
+            $stmt = $pdo->prepare('UPDATE tasks SET title = ?, description = ?, objekt = ?, einheit = ?, priority = ?, status = ?, due_date = ?, monteur_id = ? WHERE id = ?');
+            $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $monteur_id, $task_id]);
 
-        // Nach dem Speichern zur Übersicht weiterleiten
-        header('Location: overview.php');
-        exit();
+            // Nach dem Speichern zur Übersicht weiterleiten
+            header('Location: overview.php');
+            exit();
+        }
     }
 }
 ?>
@@ -89,6 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container mt-4">
         <h2>Aufgabe bearbeiten</h2>
 
+        <!-- Fehleranzeige -->
+        <?php if (isset($error)): ?>
+            <div class="alert alert-danger"><?php echo $error; ?></div>
+        <?php endif; ?>
+
         <!-- Formular zur Bearbeitung der Aufgabeninformationen -->
         <form method="POST">
             <div class="mb-3">
@@ -101,9 +116,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <textarea class="form-control" id="description" name="description" rows="3" required><?php echo htmlspecialchars($task['description']); ?></textarea>
             </div>
 
+            <!-- Objekt Dropdown-Menü -->
             <div class="mb-3">
                 <label for="objekt" class="form-label">Objekt</label>
-                <input type="text" class="form-control" id="objekt" name="objekt" value="<?php echo htmlspecialchars($task['objekt']); ?>" required>
+                <select class="form-control" id="objekt" name="objekt" required>
+                    <option value="none">Kein Objekt ausgewählt</option> <!-- Standardoption -->
+                    <?php foreach ($objekte as $objekt): ?>
+                        <option value="<?php echo $objekt['id']; ?>" <?php if ($task['objekt'] == $objekt['id']) echo 'selected'; ?>>
+                            <?php echo htmlspecialchars($objekt['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="mb-3">
