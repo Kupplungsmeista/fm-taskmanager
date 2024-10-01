@@ -16,6 +16,11 @@ $stmt = $pdo->prepare('SELECT * FROM monteurs');
 $stmt->execute();
 $monteurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Objekte aus der Datenbank abrufen
+$stmt = $pdo->prepare('SELECT * FROM objekte');
+$stmt->execute();
+$objekte = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Formularverarbeitung beim Abschicken
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['title'];
@@ -27,17 +32,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $due_date = $_POST['due_date'];
     $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : NULL; // Optionales Feld für Monteur
     
-    // Aktuelles Datum für das Eintragungsdatum
-    $created_at = date('Y-m-d H:i:s');
-    
-    // Einfügen der Aufgabe in die Datenbank
-    $stmt = $pdo->prepare('INSERT INTO tasks (title, description, objekt, einheit, priority, status, due_date, created_at, created_by, monteur_id) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $created_at, $user_id, $monteur_id]);
+    // Validierung, um sicherzustellen, dass ein Objekt ausgewählt ist
+    if ($objekt === 'none') {
+        $error = "Bitte wähle ein Objekt aus.";
+    } else {
+        // Aktuelles Datum für das Eintragungsdatum
+        $created_at = date('Y-m-d H:i:s');
 
-    // Weiterleitung zur Übersicht nach dem Speichern
-    header('Location: overview.php');
-    exit();
+        // Einfügen der Aufgabe in die Datenbank
+        $stmt = $pdo->prepare('INSERT INTO tasks (title, description, objekt, einheit, priority, status, due_date, created_at, created_by, monteur_id) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $created_at, $user_id, $monteur_id]);
+
+        // Weiterleitung zur Übersicht nach dem Speichern
+        header('Location: overview.php');
+        exit();
+    }
 }
 ?>
 
@@ -52,6 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container mt-4">
         <h2>Neue Aufgabe hinzufügen</h2>
 
+        <!-- Fehleranzeige -->
+        <?php if (isset($error)): ?>
+            <div class="alert alert-danger"><?php echo $error; ?></div>
+        <?php endif; ?>
+
         <!-- Formular zur Eingabe der Aufgabeninformationen -->
         <form method="POST">
             <div class="mb-3">
@@ -64,9 +79,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
             </div>
 
+            <!-- Objekt Dropdown-Menü -->
             <div class="mb-3">
                 <label for="objekt" class="form-label">Objekt</label>
-                <input type="text" class="form-control" id="objekt" name="objekt" required>
+                <select class="form-control" id="objekt" name="objekt" required>
+                    <option value="none">Kein Objekt ausgewählt</option> <!-- Standardoption -->
+                    <?php foreach ($objekte as $objekt): ?>
+                        <option value="<?php echo htmlspecialchars($objekt['name']); ?>"><?php echo htmlspecialchars($objekt['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="mb-3">

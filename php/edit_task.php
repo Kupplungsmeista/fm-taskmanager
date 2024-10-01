@@ -56,18 +56,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Aufgabe bearbeiten
         $title = $_POST['title'];
         $description = $_POST['description'];
-        $objekt = $_POST['objekt'];
+        $objekt = $_POST['objekt']; // Das ausgewählte Objekt wird hier erfasst
         $einheit = $_POST['einheit'];
         $priority = $_POST['priority'];
         $status = $_POST['status'];
         $due_date = $_POST['due_date'];
-        $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : NULL;
+        $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : null;
 
         // Validierung, um sicherzustellen, dass ein Objekt ausgewählt ist
         if ($objekt === 'none') {
             $error = "Bitte wähle ein Objekt aus.";
         } else {
-            // Update SQL-Abfrage
+            // Update SQL-Abfrage, um das ausgewählte Objekt in der Tabelle "tasks" zu speichern
             $stmt = $pdo->prepare('UPDATE tasks SET title = ?, description = ?, objekt = ?, einheit = ?, priority = ?, status = ?, due_date = ?, monteur_id = ? WHERE id = ?');
             $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $monteur_id, $task_id]);
 
@@ -81,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <title>Aufgabe bearbeiten</title>
@@ -95,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </script>
 </head>
+
 <body>
     <div class="container mt-4">
         <h2>Aufgabe bearbeiten</h2>
@@ -108,12 +110,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST">
             <div class="mb-3">
                 <label for="title" class="form-label">Titel</label>
-                <input type="text" class="form-control" id="title" name="title" value="<?php echo htmlspecialchars($task['title']); ?>" required>
+                <input type="text" class="form-control" id="title" name="title"
+                    value="<?php echo htmlspecialchars($task['title']); ?>" required>
             </div>
 
             <div class="mb-3">
                 <label for="description" class="form-label">Beschreibung</label>
-                <textarea class="form-control" id="description" name="description" rows="3" required><?php echo htmlspecialchars($task['description']); ?></textarea>
+                <textarea class="form-control" id="description" name="description" rows="3"
+                    required><?php echo htmlspecialchars($task['description']); ?></textarea>
             </div>
 
             <!-- Objekt Dropdown-Menü -->
@@ -122,7 +126,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <select class="form-control" id="objekt" name="objekt" required>
                     <option value="none">Kein Objekt ausgewählt</option> <!-- Standardoption -->
                     <?php foreach ($objekte as $objekt): ?>
-                        <option value="<?php echo $objekt['id']; ?>" <?php if ($task['objekt'] == $objekt['id']) echo 'selected'; ?>>
+                        <option value="<?php echo htmlspecialchars($objekt['name']); ?>" <?php if ($task['objekt'] == $objekt['name']) {
+                               echo 'selected';
+                           } ?>>
                             <?php echo htmlspecialchars($objekt['name']); ?>
                         </option>
                     <?php endforeach; ?>
@@ -131,30 +137,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="mb-3">
                 <label for="einheit" class="form-label">Einheit</label>
-                <input type="text" class="form-control" id="einheit" name="einheit" value="<?php echo htmlspecialchars($task['einheit']); ?>" required>
+                <input type="text" class="form-control" id="einheit" name="einheit"
+                    value="<?php echo htmlspecialchars($task['einheit']); ?>" required>
             </div>
 
             <div class="mb-3">
                 <label for="priority" class="form-label">Priorität</label>
                 <select class="form-control" id="priority" name="priority" required>
-                    <option value="Niedrig" <?php if ($task['priority'] === 'Niedrig') echo 'selected'; ?>>Niedrig</option>
-                    <option value="Mittel" <?php if ($task['priority'] === 'Mittel') echo 'selected'; ?>>Mittel</option>
-                    <option value="Hoch" <?php if ($task['priority'] === 'Hoch') echo 'selected'; ?>>Hoch</option>
+                    <option value="Niedrig" <?php if ($task['priority'] === 'Niedrig') {
+                        echo 'selected';
+                    } ?>>Niedrig</option>
+                    <option value="Mittel" <?php if ($task['priority'] === 'Mittel') {
+                        echo 'selected';
+                    } ?>>Mittel</option>
+                    <option value="Hoch" <?php if ($task['priority'] === 'Hoch') {
+                        echo 'selected';
+                    } ?>>Hoch</option>
                 </select>
             </div>
 
             <div class="mb-3">
                 <label for="status" class="form-label">Status</label>
                 <select class="form-control" id="status" name="status" required>
-                    <option value="Ausstehend" <?php if ($task['status'] === 'Ausstehend') echo 'selected'; ?>>Ausstehend</option>
-                    <option value="In Bearbeitung" <?php if ($task['status'] === 'In Bearbeitung') echo 'selected'; ?>>In Bearbeitung</option>
-                    <option value="Erledigt" <?php if ($task['status'] === 'Erledigt') echo 'selected'; ?>>Erledigt</option>
+                    <option value="Ausstehend" <?php if ($task['status'] === 'Ausstehend') {
+                        echo 'selected';
+                    } ?>>Ausstehend</option>
+                    <option value="In Bearbeitung" <?php if ($task['status'] === 'In Bearbeitung') {
+                        echo 'selected';
+                    } ?>>In Bearbeitung</option>
+                    <option value="Erledigt" <?php if ($task['status'] === 'Erledigt') {
+                        echo 'selected';
+                    } ?>>Erledigt</option>
                 </select>
             </div>
 
             <div class="mb-3">
                 <label for="due_date" class="form-label">Fälligkeitsdatum</label>
-                <input type="date" class="form-control" id="due_date" name="due_date" value="<?php echo htmlspecialchars($task['due_date']); ?>" required>
+                <input type="date" class="form-control" id="due_date" name="due_date"
+                    value="<?php echo htmlspecialchars($task['due_date']); ?>" required>
             </div>
 
             <!-- Monteur-Auswahl -->
@@ -163,7 +183,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <select class="form-control" id="monteur_id" name="monteur_id">
                     <option value="">Kein Monteur ausgewählt</option>
                     <?php foreach ($monteurs as $monteur): ?>
-                        <option value="<?php echo $monteur['id']; ?>" <?php if ($task['monteur_id'] == $monteur['id']) echo 'selected'; ?>>
+                        <option value="<?php echo $monteur['id']; ?>" <?php if ($task['monteur_id'] == $monteur['id']) {
+                               echo 'selected';
+                           } ?>>
                             <?php echo htmlspecialchars($monteur['name']); ?>
                         </option>
                     <?php endforeach; ?>
@@ -190,10 +212,12 @@ Titel: <?php echo htmlspecialchars($task['title']); ?>
 Beschreibung: <?php echo htmlspecialchars($task['description']); ?>
 
 
+
 Einsatzort: <?php echo $einsatzort; ?>
             </textarea>
             <button class="btn btn-outline-primary mt-2" onclick="copyToClipboard()">Inhalt kopieren</button>
         </div>
     </div>
 </body>
+
 </html>
