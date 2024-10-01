@@ -31,6 +31,12 @@ $stmt = $pdo->prepare('SELECT * FROM monteurs');
 $stmt->execute();
 $monteurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Funktion zur Ermittlung des Einsatzortes
+$einsatzort = htmlspecialchars($task['objekt']);
+if ($task['einheit'] !== '-') {
+    $einsatzort .= ' + ' . htmlspecialchars($task['einheit']);
+}
+
 // Formularverarbeitung beim Abschicken
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['delete'])) {
@@ -69,6 +75,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <title>Aufgabe bearbeiten</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        function copyToClipboard() {
+            var copyText = document.getElementById("copyField");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // Für mobile Geräte
+            document.execCommand("copy");
+            alert("Inhalt kopiert: " + copyText.value);
+        }
+    </script>
 </head>
 <body>
     <div class="container mt-4">
@@ -141,6 +156,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Zurück zur Übersicht Button -->
             <a href="overview.php" class="btn btn-secondary">Zurück zur Übersicht</a>
         </form>
+
+        <!-- Copy-Paste Feld -->
+        <div class="mt-4">
+            <h5>Copy-Paste Feld</h5>
+            <textarea class="form-control" id="copyField" rows="5">
+Titel: <?php echo htmlspecialchars($task['title']); ?>
+
+
+Beschreibung: <?php echo htmlspecialchars($task['description']); ?>
+
+
+Einsatzort: <?php echo $einsatzort; ?>
+            </textarea>
+            <button class="btn btn-outline-primary mt-2" onclick="copyToClipboard()">Inhalt kopieren</button>
+        </div>
     </div>
 </body>
 </html>
