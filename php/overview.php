@@ -25,8 +25,9 @@ $status_stmt->execute();
 $status_counts = $status_stmt->fetch(PDO::FETCH_ASSOC);
 
 // SQL-Abfrage für die Aufgaben mit benutzerdefinierter Sortierung nach Status
-$sql = "SELECT tasks.*, users.username as creator_name FROM tasks
+$sql = "SELECT tasks.*, users.username as creator_name, monteurs.name as monteur_name FROM tasks
         LEFT JOIN users ON tasks.created_by = users.id
+        LEFT JOIN monteurs ON tasks.monteur_id = monteurs.id
         WHERE 1";
 
 // Suchfunktion hinzufügen
@@ -110,6 +111,7 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <th>Priorität</th>
                     <th>Status</th>
                     <th>Fälligkeitsdatum</th>
+                    <th>Monteur</th> <!-- Neue Spalte für Monteur -->
                     <th>Eintragungsdatum</th>
                     <th>Ersteller</th>
                 </tr>
@@ -123,6 +125,7 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <td><?php echo htmlspecialchars($task['priority']); ?></td>
                         <td><?php echo htmlspecialchars($task['status']); ?></td>
                         <td><?php echo date('d.m.Y', strtotime($task['due_date'])); ?></td>
+                        <td><?php echo htmlspecialchars($task['monteur_name'] ?: 'Kein Monteur'); ?></td> <!-- Monteur anzeigen -->
                         <td><?php echo date('d.m.Y H:i', strtotime($task['created_at'])); ?></td>
                         <td><?php echo htmlspecialchars($task['creator_name']); ?></td>
                     </tr>

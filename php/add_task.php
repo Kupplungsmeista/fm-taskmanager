@@ -11,6 +11,11 @@ if (!isset($_SESSION['user_id'])) {
 // Benutzerinformationen abrufen
 $user_id = $_SESSION['user_id'];
 
+// Monteure aus der Datenbank abrufen
+$stmt = $pdo->prepare('SELECT * FROM monteurs');
+$stmt->execute();
+$monteurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Formularverarbeitung beim Abschicken
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['title'];
@@ -20,14 +25,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $priority = $_POST['priority'];
     $status = $_POST['status'];
     $due_date = $_POST['due_date'];
+    $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : NULL; // Optionales Feld für Monteur
     
     // Aktuelles Datum für das Eintragungsdatum
     $created_at = date('Y-m-d H:i:s');
     
     // Einfügen der Aufgabe in die Datenbank
-    $stmt = $pdo->prepare('INSERT INTO tasks (title, description, objekt, einheit, priority, status, due_date, created_at, created_by) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $created_at, $user_id]);
+    $stmt = $pdo->prepare('INSERT INTO tasks (title, description, objekt, einheit, priority, status, due_date, created_at, created_by, monteur_id) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $created_at, $user_id, $monteur_id]);
 
     // Weiterleitung zur Übersicht nach dem Speichern
     header('Location: overview.php');
@@ -89,6 +95,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="mb-3">
                 <label for="due_date" class="form-label">Fälligkeitsdatum</label>
                 <input type="date" class="form-control" id="due_date" name="due_date" required>
+            </div>
+
+            <!-- Monteur-Auswahl -->
+            <div class="mb-3">
+                <label for="monteur_id" class="form-label">Monteur</label>
+                <select class="form-control" id="monteur_id" name="monteur_id">
+                    <option value="">Kein Monteur ausgewählt</option>
+                    <?php foreach ($monteurs as $monteur): ?>
+                        <option value="<?php echo $monteur['id']; ?>"><?php echo htmlspecialchars($monteur['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <!-- Speichern Button -->

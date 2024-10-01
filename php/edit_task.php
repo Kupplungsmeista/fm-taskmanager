@@ -26,6 +26,11 @@ if (!$task) {
     exit();
 }
 
+// Monteure abrufen
+$stmt = $pdo->prepare('SELECT * FROM monteurs');
+$stmt->execute();
+$monteurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Formularverarbeitung beim Abschicken
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['delete'])) {
@@ -45,10 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $priority = $_POST['priority'];
         $status = $_POST['status'];
         $due_date = $_POST['due_date'];
+        $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : NULL; // Monteur bearbeiten
 
         // Update SQL-Abfrage
-        $stmt = $pdo->prepare('UPDATE tasks SET title = ?, description = ?, objekt = ?, einheit = ?, priority = ?, status = ?, due_date = ? WHERE id = ?');
-        $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $task_id]);
+        $stmt = $pdo->prepare('UPDATE tasks SET title = ?, description = ?, objekt = ?, einheit = ?, priority = ?, status = ?, due_date = ?, monteur_id = ? WHERE id = ?');
+        $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $monteur_id, $task_id]);
 
         // Nach dem Speichern zur Übersicht weiterleiten
         header('Location: overview.php');
@@ -111,6 +117,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="mb-3">
                 <label for="due_date" class="form-label">Fälligkeitsdatum</label>
                 <input type="date" class="form-control" id="due_date" name="due_date" value="<?php echo htmlspecialchars($task['due_date']); ?>" required>
+            </div>
+
+            <!-- Monteur-Auswahl -->
+            <div class="mb-3">
+                <label for="monteur_id" class="form-label">Monteur</label>
+                <select class="form-control" id="monteur_id" name="monteur_id">
+                    <option value="">Kein Monteur ausgewählt</option>
+                    <?php foreach ($monteurs as $monteur): ?>
+                        <option value="<?php echo $monteur['id']; ?>" <?php if ($task['monteur_id'] == $monteur['id']) echo 'selected'; ?>>
+                            <?php echo htmlspecialchars($monteur['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <!-- Speichern Button -->
