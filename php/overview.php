@@ -14,7 +14,17 @@ if (isset($_GET['search'])) {
     $search_query = trim($_GET['search']);
 }
 
-// SQL-Abfrage vorbereiten
+// SQL-Abfrage für die Aufgaben nach Status zählen
+$stmt = $pdo->prepare('
+    SELECT 
+        (SELECT COUNT(*) FROM tasks WHERE status = "Ausstehend") AS ausstehend,
+        (SELECT COUNT(*) FROM tasks WHERE status = "In Bearbeitung") AS in_bearbeitung,
+        (SELECT COUNT(*) FROM tasks WHERE status = "Erledigt") AS erledigt
+');
+$stmt->execute();
+$status_counts = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// SQL-Abfrage vorbereiten für die Aufgabensuche
 $sql = "SELECT tasks.*, users.username as creator_name FROM tasks
         LEFT JOIN users ON tasks.created_by = users.id
         WHERE 1";
@@ -67,6 +77,16 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <input class="form-control me-2" type="search" name="search" placeholder="Suche" aria-label="Search" value="<?php echo htmlspecialchars($search_query); ?>">
             <button class="btn btn-outline-success" type="submit">Suche</button>
         </form>
+
+        <!-- Statusübersicht -->
+        <div class="alert alert-info">
+            <p>Aufgabenstatus:</p>
+            <ul>
+                <li>Ausstehend: <strong><?php echo $status_counts['ausstehend']; ?></strong></li>
+                <li>In Bearbeitung: <strong><?php echo $status_counts['in_bearbeitung']; ?></strong></li>
+                <li>Erledigt: <strong><?php echo $status_counts['erledigt']; ?></strong></li>
+            </ul>
+        </div>
 
         <!-- Button zum Hinzufügen einer neuen Aufgabe -->
         <a href="add_task.php" class="btn btn-primary mb-3">Neue Aufgabe hinzufügen</a>
