@@ -14,6 +14,10 @@ if (isset($_GET['search'])) {
     $search_query = trim($_GET['search']);
 }
 
+// Sortierung festlegen
+$order_by = isset($_GET['order_by']) ? $_GET['order_by'] : 'status';
+$order_dir = isset($_GET['order_dir']) && $_GET['order_dir'] === 'desc' ? 'desc' : 'asc';
+
 // SQL-Abfrage für die Statusübersicht (Anzahl der Aufgaben nach Status)
 $status_stmt = $pdo->prepare('
     SELECT 
@@ -37,18 +41,21 @@ if ($search_query != '') {
     $params[':search'] = '%' . $search_query . '%';
 }
 
-// Sortierung nach Status: In Bearbeitung, Ausstehend, Erledigt
-$sql .= " ORDER BY 
-          CASE 
-              WHEN tasks.status = 'In Bearbeitung' THEN 1
-              WHEN tasks.status = 'Ausstehend' THEN 2
-              WHEN tasks.status = 'Erledigt' THEN 3
-          END";
+// Sortierung hinzufügen
+$sql .= " ORDER BY $order_by $order_dir";
 
 // Abfrage vorbereiten und ausführen
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Funktion, um die Sortierrichtung zu wechseln
+function toggleSort($column, $current_order_by, $current_order_dir) {
+    if ($column === $current_order_by) {
+        return $current_order_dir === 'asc' ? 'desc' : 'asc';
+    }
+    return 'asc';
+}
 ?>
 
 <!DOCTYPE html>
@@ -109,15 +116,15 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Titel</th>
-                    <th>Objekt</th>
-                    <th>Einheit</th>
-                    <th>Priorität</th>
-                    <th>Status</th>
-                    <th>Fälligkeitsdatum</th>
-                    <th>Monteur</th>
-                    <th>Eintragungsdatum</th>
-                    <th>Ersteller</th>
+                    <th><a href="?order_by=title&order_dir=<?php echo toggleSort('title', $order_by, $order_dir); ?>">Titel</a></th>
+                    <th><a href="?order_by=objekt&order_dir=<?php echo toggleSort('objekt', $order_by, $order_dir); ?>">Objekt</a></th>
+                    <th><a href="?order_by=einheit&order_dir=<?php echo toggleSort('einheit', $order_by, $order_dir); ?>">Einheit</a></th>
+                    <th><a href="?order_by=priority&order_dir=<?php echo toggleSort('priority', $order_by, $order_dir); ?>">Priorität</a></th>
+                    <th><a href="?order_by=status&order_dir=<?php echo toggleSort('status', $order_by, $order_dir); ?>">Status</a></th>
+                    <th><a href="?order_by=due_date&order_dir=<?php echo toggleSort('due_date', $order_by, $order_dir); ?>">Fälligkeitsdatum</a></th>
+                    <th><a href="?order_by=monteur_name&order_dir=<?php echo toggleSort('monteur_name', $order_by, $order_dir); ?>">Monteur</a></th>
+                    <th><a href="?order_by=created_at&order_dir=<?php echo toggleSort('created_at', $order_by, $order_dir); ?>">Eintragungsdatum</a></th>
+                    <th><a href="?order_by=creator_name&order_dir=<?php echo toggleSort('creator_name', $order_by, $order_dir); ?>">Ersteller</a></th>
                 </tr>
             </thead>
             <tbody>
