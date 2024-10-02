@@ -4,7 +4,7 @@ require '../config/db.php';
 
 // Überprüfen, ob der Benutzer angemeldet ist
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: ../index.php');
     exit();
 }
 

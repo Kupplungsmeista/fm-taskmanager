@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $pdo->prepare('INSERT INTO users (username, password) VALUES (?, ?)');
     $stmt->execute([$username, $password]);
 
-    header('Location: login.php');
+    header('Location: ../index.php');
     exit();
 }
 ?>
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn btn-primary w-100">Registrieren</button>
             </form>
             <div class="text-center mt-3">
-                <a href="login.php">Zum Login</a>
+                <a href="../index.php">Zum Login</a>
             </div>
         </div>
     </div>

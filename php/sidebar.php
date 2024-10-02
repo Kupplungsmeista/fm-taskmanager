@@ -39,12 +39,6 @@
                 <h5 class="text-center py-3">Hausverwaltung</h5>
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link active" href="index.php"> <!-- Link zum Dashboard -->
-                            <i class="bi bi-house-door-fill"></i> <!-- Icon für das Dashboard -->
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="overview.php"> <!-- Link zum Taskmanager -->
                             <i class="bi bi-list-task"></i> <!-- Icon für den Taskmanager -->
                             Taskmanager
