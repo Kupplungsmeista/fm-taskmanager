@@ -15,7 +15,8 @@
         }
 
         /* Farbe bei Hover auf Blau ändern, auch für aktive Links */
-        .nav-link:hover, .nav-link.active:hover {
+        .nav-link:hover,
+        .nav-link.active:hover {
             color: #007bff;
         }
 
@@ -38,11 +39,13 @@
             <div class="sidebar-sticky">
                 <h5 class="text-center py-3">Hausverwaltung</h5>
                 <ul class="nav flex-column">
+
                     <li class="nav-item">
                         <a class="nav-link" href="overview.php"> <!-- Link zum Taskmanager -->
                             <i class="bi bi-list-task"></i> <!-- Icon für den Taskmanager -->
                             Taskmanager
                         </a>
+
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="settings.php"> <!-- Link zu den Einstellungen -->
