@@ -103,11 +103,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('DELETE FROM files WHERE id = ?');
             $stmt->execute([$file_id]);
 
-            echo json_encode(['success' => true]);
-            exit();
+            $message = 'Bild erfolgreich gelöscht.';
         } else {
-            echo json_encode(['success' => false, 'message' => 'Bild nicht gefunden']);
-            exit();
+            $error = 'Bild konnte nicht gefunden werden.';
         }
     } else {
         // Aufgabe bearbeiten
@@ -140,7 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <title>Aufgabe bearbeiten</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 </head>
 
 <body>
@@ -266,12 +263,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="row">
             <?php foreach ($files as $index => $file): ?>
                 <?php if (in_array(pathinfo($file['filename'], PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png'])): ?>
-                    <div class="col-md-3 position-relative" id="file-<?php echo $file['id']; ?>">
+                    <div class="col-md-3 position-relative">
                         <!-- Bild löschen -->
-                        <button class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="deleteImage(<?php echo $file['id']; ?>)">X</button>
+                        <form method="POST" class="position-absolute top-0 end-0">
+                            <input type="hidden" name="file_id" value="<?php echo $file['id']; ?>">
+                            <button type="submit" name="delete_image" class="btn btn-sm btn-danger">X</button>
+                        </form>
                         <!-- Bild anzeigen -->
                         <img src="<?php echo $file['filepath']; ?>" class="img-fluid img-thumbnail" alt="<?php echo $file['filename']; ?>"
-                             data-bs-toggle="modal" data-bs-target="#imageModal" onclick="openImage('<?php echo $file['filepath']; ?>')">
+                             data-bs-toggle="modal" data-bs-target="#imageModal" onclick="openImage(<?php echo $index; ?>)">
                     </div>
                 <?php endif; ?>
             <?php endforeach; ?>
@@ -288,6 +288,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="modal-body text-center">
                         <img id="modalImage" src="" class="img-fluid" alt="Bild">
                     </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="previousImage()">Zurück</button>
+                        <button type="button" class="btn btn-secondary" onclick="nextImage()">Weiter</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -299,30 +303,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         var images = <?php echo json_encode(array_column($files, 'filepath')); ?>;
         var currentIndex = 0;
 
-        function openImage(filepath) {
-            document.getElementById('modalImage').src = filepath;
+        function openImage(index) {
+            currentIndex = index;
+            document.getElementById('modalImage').src = images[currentIndex];
         }
 
-        // Bild löschen mit AJAX
-        function deleteImage(fileId) {
-            if (confirm('Möchtest du dieses Bild wirklich löschen?')) {
-                $.ajax({
-                    url: '',
-                    type: 'POST',
-                    data: {
-                        delete_image: true,
-                        file_id: fileId
-                    },
-                    success: function(response) {
-                        var result = JSON.parse(response);
-                        if (result.success) {
-                            $('#file-' + fileId).remove(); // Bild wird aus der Galerie entfernt
-                        } else {
-                            alert(result.message);
-                        }
-                    }
-                });
-            }
+        function nextImage() {
+            currentIndex = (currentIndex + 1) % images.length;
+            document.getElementById('modalImage').src = images[currentIndex];
+        }
+
+        function previousImage() {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+            document.getElementById('modalImage').src = images[currentIndex];
         }
     </script>
 
