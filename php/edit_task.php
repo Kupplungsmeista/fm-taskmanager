@@ -36,16 +36,20 @@ $stmt = $pdo->prepare('SELECT * FROM objekte');
 $stmt->execute();
 $objekte = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Hochgeladene Dateien abrufen
-$stmt = $pdo->prepare('SELECT * FROM files WHERE task_id = ?');
-$stmt->execute([$task_id]);
-$files = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 // Funktion zur Ermittlung des Einsatzortes
 $einsatzort = htmlspecialchars($task['objekt']);
 if ($task['einheit'] !== '-') {
     $einsatzort .= ' + ' . htmlspecialchars($task['einheit']);
 }
+
+// Hochgeladene Dateien abrufen
+function getFiles($pdo, $task_id) {
+    $stmt = $pdo->prepare('SELECT * FROM files WHERE task_id = ?');
+    $stmt->execute([$task_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+$files = getFiles($pdo, $task_id);
 
 // Formularverarbeitung beim Abschicken
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -68,8 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $filePath = $uploadDir . $fileName;
                 $fileError = $_FILES['files']['error'][$i];
 
-                // Datei hochladen
-                if ($fileError === UPLOAD_ERR_OK) {
+                // Überprüfen, ob die Datei bereits existiert
+                $stmt = $pdo->prepare('SELECT COUNT(*) FROM files WHERE task_id = ? AND filename = ?');
+                $stmt->execute([$task_id, $fileName]);
+                $fileExists = $stmt->fetchColumn();
+
+                // Datei nur hochladen, wenn sie noch nicht existiert
+                if ($fileExists == 0 && $fileError === UPLOAD_ERR_OK) {
                     if (move_uploaded_file($_FILES['files']['tmp_name'][$i], $filePath)) {
                         // Dateiinformationen in der Datenbank speichern
                         $stmt = $pdo->prepare('INSERT INTO files (task_id, filename, filepath, uploaded_at) VALUES (?, ?, ?, NOW())');
@@ -79,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $error = 'Fehler beim Verschieben der Datei: ' . $fileName;
                         break; // Hochladen stoppen, wenn ein Fehler auftritt
                     }
+                } elseif ($fileExists > 0) {
+                    $message = 'Die Datei ' . $fileName . ' wurde bereits hochgeladen.';
                 } else {
                     $error = 'Fehler beim Hochladen der Datei: ' . $fileName . ' (Fehlercode: ' . $fileError . ')';
                     break; // Hochladen stoppen, wenn ein Fehler auftritt
@@ -103,7 +114,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('DELETE FROM files WHERE id = ?');
             $stmt->execute([$file_id]);
 
-            echo json_encode(['success' => true]);
+            // Dateien erneut abrufen
+            $files = getFiles($pdo, $task_id);
+
+            echo json_encode(['success' => true, 'files' => $files]);
             exit();
         } else {
             echo json_encode(['success' => false, 'message' => 'Bild nicht gefunden']);
@@ -158,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <!-- Formular zur Bearbeitung der Aufgabeninformationen -->
-        <form method="POST" enctype="multipart/form-data">
+        <form id="uploadForm" method="POST" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="title" class="form-label">Titel</label>
                 <input type="text" class="form-control" id="title" name="title"
@@ -167,7 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="mb-3">
                 <label for="description" class="form-label">Beschreibung</label>
-                <textarea class="form-control" id="description" name="description" rows="3" required><?php echo htmlspecialchars($task['description']); ?></textarea>
+                <textarea class="form-control" id="description" name="description" rows="3"
+                    required><?php echo htmlspecialchars($task['description']); ?></textarea>
             </div>
 
             <!-- Objekt Dropdown-Menü -->
@@ -245,7 +260,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Mehrere Dateien hochladen -->
             <div class="mb-3">
                 <label for="files" class="form-label">Dateien hochladen (Bilder oder Dokumente)</label>
-                <input type="file" class="form-control" id="files" name="files[]" multiple accept=".jpg,.jpeg,.png,.pdf,.docx,.doc,.txt">
+                <input type="file" class="form-control" id="files" name="files[]" multiple
+                    accept=".jpg,.jpeg,.png,.pdf,.docx,.doc,.txt">
             </div>
 
             <!-- Upload-Button -->
@@ -263,19 +279,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Galerie mit hochgeladenen Bildern -->
         <h3 class="mt-4">Galerie</h3>
-        <div class="row">
+        <div class="row" id="gallery">
             <?php foreach ($files as $index => $file): ?>
                 <?php if (in_array(pathinfo($file['filename'], PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png'])): ?>
                     <div class="col-md-3 position-relative" id="file-<?php echo $file['id']; ?>">
                         <!-- Bild löschen -->
-                        <button class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="deleteImage(<?php echo $file['id']; ?>)">X</button>
+                        <button class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                            onclick="deleteImage(<?php echo $file['id']; ?>)">X</button>
                         <!-- Bild anzeigen -->
-                        <img src="<?php echo $file['filepath']; ?>" class="img-fluid img-thumbnail" alt="<?php echo $file['filename']; ?>"
-                             data-bs-toggle="modal" data-bs-target="#imageModal" onclick="openImage('<?php echo $file['filepath']; ?>')">
+                        <img src="<?php echo $file['filepath']; ?>" class="img-fluid img-thumbnail"
+                            alt="<?php echo $file['filename']; ?>" data-bs-toggle="modal" data-bs-target="#imageModal"
+                            onclick="openImage('<?php echo $file['filepath']; ?>')">
                     </div>
                 <?php endif; ?>
             <?php endforeach; ?>
         </div>
+
+        <!-- Liste der hochgeladenen Dokumente -->
+        <h3 class="mt-4">Dokumente</h3>
+        <ul id="document-list">
+            <?php foreach ($files as $file): ?>
+                <?php if (in_array(pathinfo($file['filename'], PATHINFO_EXTENSION), ['pdf', 'docx', 'doc', 'txt'])): ?>
+                    <li>
+                        <a href="<?php echo $file['filepath']; ?>" target="_blank"><?php echo $file['filename']; ?></a>
+                        <button class="btn btn-sm btn-danger" onclick="deleteImage(<?php echo $file['id']; ?>)">Löschen</button>
+                    </li>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </ul>
 
         <!-- Modal zum Anzeigen der Bilder -->
         <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -307,22 +338,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function deleteImage(fileId) {
             if (confirm('Möchtest du dieses Bild wirklich löschen?')) {
                 $.ajax({
-                    url: '',
+                    url: '', // Diese Datei erneut aufrufen
                     type: 'POST',
                     data: {
                         delete_image: true,
                         file_id: fileId
                     },
-                    success: function(response) {
+                    success: function (response) {
                         var result = JSON.parse(response);
                         if (result.success) {
-                            $('#file-' + fileId).remove(); // Bild wird aus der Galerie entfernt
+                            $('#file-' + fileId).remove(); // Bild oder Dokument wird entfernt
+                            // Aktualisiere die Dateiliste
+                            updateFiles();
                         } else {
                             alert(result.message);
                         }
                     }
                 });
             }
+        }
+
+        function updateFiles() {
+            // Seite aktualisieren, um Dateien neu zu laden
+            location.reload();
         }
     </script>
 
