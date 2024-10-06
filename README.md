@@ -23,12 +23,16 @@ Diese Webapplikation dient zur Verwaltung von Aufgaben innerhalb einer Organisat
 - [x] Fälligkeitsdatum für Aufgaben hinzufügen
 - [x] Verknüpfung von Aufgaben mit Monteuren und Objekten
 - [x] Datei-Upload für Aufgaben implementieren
-- [ ] Hochgeladene Dateien anzeigen und verwalten (z.B. Löschen)
+- [X] Hochgeladene Dateien anzeigen und verwalten (z.B. Löschen)
+- [X] Benutzerregistrierung über die Einstellungen
+- [X] Objektregistrierung über die Einstellungen
 - [ ] Aufgaben nach Priorität, Status und Fälligkeitsdatum filtern
-- [ ] Paginierung für die Aufgabenübersicht hinzufügen
 - [ ] Sicherheit: CSRF-Schutz und Validierung der Eingaben verbessern
 - [ ] Benachrichtigungssystem für bevorstehende oder überfällige Aufgaben implementieren
-- [ ] Responsives Design für mobile Geräte optimieren
+- [ ] Mieter Ticketsystem
+- [ ] Bilder-Upload Funktion für Ticketsystem
+- [ ] Switchbutton für Innerhalb/Außerhalb der Wohnung
+- [ ] Benutzerollen und Berechtigungen
 
 ---
 
