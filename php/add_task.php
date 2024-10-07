@@ -21,58 +21,84 @@ $stmt = $pdo->prepare('SELECT * FROM objekte');
 $stmt->execute();
 $objekte = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$task_id = null; // Variable für Task-ID
+
 // Formularverarbeitung beim Abschicken
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = $_POST['title'];
-    $description = $_POST['description'];
-    $objekt = $_POST['objekt'];
-    $einheit = $_POST['einheit'];
-    $priority = $_POST['priority'];
-    $status = $_POST['status'];
-    $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : '-'; // Wenn kein Datum, dann "-"
-    $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : NULL; // Optionales Feld für Monteur
+    if (isset($_POST['remove_file'])) {
+        // Datei löschen
+        $file_id = $_POST['file_id'];
+        $stmt = $pdo->prepare('SELECT * FROM files WHERE id = ?');
+        $stmt->execute([$file_id]);
+        $file = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Validierung, um sicherzustellen, dass ein Objekt ausgewählt ist
-    if ($objekt === 'none') {
-        $error = "Bitte wähle ein Objekt aus.";
-    } else {
-        // Aktuelles Datum für das Eintragungsdatum
-        $created_at = date('Y-m-d H:i:s');
-
-        // Einfügen der Aufgabe in die Datenbank
-        $stmt = $pdo->prepare('INSERT INTO tasks (title, description, objekt, einheit, priority, status, due_date, created_at, created_by, monteur_id) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $created_at, $user_id, $monteur_id]);
-
-        // Task-ID erhalten, um Dateien zu speichern
-        $task_id = $pdo->lastInsertId();
-
-        // Dateiupload verarbeiten
-        if (!empty($_FILES['files']['name'][0])) {
-            $upload_dir = '../uploads/'; // Verzeichnis, in dem die Dateien gespeichert werden
-            foreach ($_FILES['files']['name'] as $key => $name) {
-                $file_tmp = $_FILES['files']['tmp_name'][$key];
-                $file_name = time() . '_' . $name; // Dateiname mit Timestamp
-                $file_path = $upload_dir . $file_name; // Pfad zur Datei
-                move_uploaded_file($file_tmp, $file_path);
-
-                // Datei in der Datenbank speichern (Nutzung der Tabelle 'files')
-                $stmt = $pdo->prepare('INSERT INTO files (task_id, filename, filepath, uploaded_at) VALUES (?, ?, ?, NOW())');
-                $stmt->execute([$task_id, $file_name, $file_path]);
+        if ($file) {
+            $file_path = $file['filepath'];
+            if (file_exists($file_path)) {
+                unlink($file_path); // Datei aus dem Dateisystem löschen
             }
-        }
+            // Datei aus der Datenbank löschen
+            $stmt = $pdo->prepare('DELETE FROM files WHERE id = ?');
+            $stmt->execute([$file_id]);
 
-        // Weiterleitung zur Übersicht nach dem Speichern
-        header('Location: overview.php');
-        exit();
+            // Seite aktualisieren, um die Änderungen anzuzeigen
+            echo "<script>window.location.href = window.location.href;</script>";
+            exit();
+        }
+    } else {
+        $title = $_POST['title'];
+        $description = $_POST['description'];
+        $objekt = $_POST['objekt'];
+        $einheit = $_POST['einheit'];
+        $priority = $_POST['priority'];
+        $status = $_POST['status'];
+        $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : '-'; // Wenn kein Datum, dann "-"
+        $monteur_id = !empty($_POST['monteur_id']) ? $_POST['monteur_id'] : NULL; // Optionales Feld für Monteur
+
+        // Validierung, um sicherzustellen, dass ein Objekt ausgewählt ist
+        if ($objekt === 'none') {
+            $error = "Bitte wähle ein Objekt aus.";
+        } else {
+            // Aktuelles Datum für das Eintragungsdatum
+            $created_at = date('Y-m-d H:i:s');
+
+            // Einfügen der Aufgabe in die Datenbank
+            $stmt = $pdo->prepare('INSERT INTO tasks (title, description, objekt, einheit, priority, status, due_date, created_at, created_by, monteur_id) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$title, $description, $objekt, $einheit, $priority, $status, $due_date, $created_at, $user_id, $monteur_id]);
+
+            // Task-ID erhalten, um Dateien zu speichern
+            $task_id = $pdo->lastInsertId();
+
+            // Dateiupload verarbeiten, aber erst nachdem die Aufgabe erfolgreich hinzugefügt wurde
+            if (!empty($_FILES['files']['name'][0])) {
+                $upload_dir = '../uploads/'; // Verzeichnis, in dem die Dateien gespeichert werden
+                foreach ($_FILES['files']['name'] as $key => $name) {
+                    $file_tmp = $_FILES['files']['tmp_name'][$key];
+                    $file_name = time() . '_' . $name; // Dateiname mit Timestamp
+                    $file_path = $upload_dir . $file_name; // Pfad zur Datei
+                    move_uploaded_file($file_tmp, $file_path);
+
+                    // Datei in der Datenbank speichern (Nutzung der Tabelle 'files')
+                    $stmt = $pdo->prepare('INSERT INTO files (task_id, filename, filepath, uploaded_at) VALUES (?, ?, ?, NOW())');
+                    $stmt->execute([$task_id, $file_name, $file_path]);
+                }
+            }
+
+            // Weiterleitung zur Übersicht nach dem Speichern
+            header('Location: overview.php');
+            exit();
+        }
     }
 }
 
-// Hochgeladene Dateien abrufen, wenn sie existieren
+// Hochgeladene Dateien abrufen, aber nur für die aktuelle Aufgabe
 $uploaded_files = [];
-$stmt = $pdo->prepare('SELECT * FROM files');
-$stmt->execute();
-$uploaded_files = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if ($task_id) {
+    $stmt = $pdo->prepare('SELECT * FROM files WHERE task_id = ?');
+    $stmt->execute([$task_id]);
+    $uploaded_files = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>
@@ -176,37 +202,39 @@ $uploaded_files = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <!-- Übersicht über hochgeladene Dateien -->
+        <?php if (!empty($uploaded_files)): ?>
         <div class="card mt-4">
             <div class="card-header">
                 <h3 class="card-title">Hochgeladene Dateien</h3>
             </div>
             <div class="card-body">
-                <?php if (!empty($uploaded_files)): ?>
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Dateiname</th>
-                                <th>Pfad</th>
-                                <th>Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($uploaded_files as $file): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($file['filename']); ?></td>
-                                    <td><a href="<?php echo htmlspecialchars($file['filepath']); ?>" target="_blank">Datei anzeigen</a></td>
-                                    <td>
-                                        <!-- Hier können weitere Aktionen hinzugefügt werden, wie z.B. Datei löschen -->
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <p>Keine Dateien hochgeladen.</p>
-                <?php endif; ?>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Dateiname</th>
+                            <th>Pfad</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($uploaded_files as $file): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($file['filename']); ?></td>
+                            <td><a href="<?php echo htmlspecialchars($file['filepath']); ?>" target="_blank">Datei anzeigen</a></td>
+                            <td>
+                                <!-- Button zum Entfernen der Datei -->
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="file_id" value="<?php echo $file['id']; ?>">
+                                    <button type="submit" name="remove_file" class="btn btn-danger btn-sm">Entfernen</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
+        <?php endif; ?>
     </div>
 </body>
 </html>

@@ -69,6 +69,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Nach dem Löschen zur Übersicht weiterleiten
         header('Location: overview.php');
         exit();
+    } elseif (isset($_POST['remove_file'])) {
+        // Datei löschen
+        $file_id = $_POST['file_id'];
+        $stmt = $pdo->prepare('SELECT * FROM files WHERE id = ?');
+        $stmt->execute([$file_id]);
+        $file = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($file) {
+            $file_path = $file['filepath'];
+            if (file_exists($file_path)) {
+                unlink($file_path); // Datei aus dem Dateisystem löschen
+            }
+            // Datei aus der Datenbank löschen
+            $stmt = $pdo->prepare('DELETE FROM files WHERE id = ?');
+            $stmt->execute([$file_id]);
+
+            // Seite aktualisieren, um die Änderungen anzuzeigen
+            echo "<script>window.location.href = window.location.href;</script>";
+            exit();
+        }
     } else {
         // Aufgabe bearbeiten
         $title = $_POST['title'];
@@ -247,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <!-- Speichern Button -->
-                    <button type="submit" class="btn btn-primary">Speichern</button>
+                    <button type="submit" class="btn btn-success">Speichern</button>
 
                     <!-- Lösch-Button -->
                     <button type="submit" name="delete" class="btn btn-danger">Löschen</button>
@@ -312,7 +332,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td><?php echo htmlspecialchars($file['filename']); ?></td>
                                     <td><a href="<?php echo htmlspecialchars($file['filepath']); ?>" target="_blank">Datei anzeigen</a></td>
                                     <td>
-                                        <!-- Weitere Aktionen wie Datei löschen könnten hier hinzugefügt werden -->
+                                        <!-- Button zum Entfernen der Datei -->
+                                        <form method="POST" style="display:inline;">
+                                            <input type="hidden" name="file_id" value="<?php echo $file['id']; ?>">
+                                            <button type="submit" name="remove_file" class="btn btn-danger btn-sm">Entfernen</button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
