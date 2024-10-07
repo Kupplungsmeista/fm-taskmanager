@@ -1,4 +1,3 @@
-<!-- sidebar.php -->
 <!DOCTYPE html>
 <html lang="de">
 
@@ -9,25 +8,41 @@
     <!-- Bootstrap Icons CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        /* Standard-Textfarbe der Links auf Schwarz setzen */
+        /* Sidebar Styling */
+        #sidebarMenu {
+            min-height: 100vh;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Styling für den Header */
+        .sidebar-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        /* Styling für die Links */
         .nav-link {
             color: black;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            padding: 10px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* Farbe bei Hover auf Blau ändern, auch für aktive Links */
+        /* Hover und active Effekte */
         .nav-link:hover,
-        .nav-link.active:hover {
-            color: #007bff;
-        }
-
-        /* Verhindere, dass der aktive Link permanent blau ist */
         .nav-link.active {
-            color: black;
+            background-color: #007bff;
+            color: white;
         }
 
-        /* Optional: Hintergrundfarbe bei Hover */
-        .nav-link:hover {
-            background-color: #e9ecef;
+        /* Icon Abstände */
+        .nav-link i {
+            margin-right: 10px;
         }
     </style>
     <title>Sidebar</title>
@@ -37,15 +52,18 @@
     <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
         <div class="position-sticky">
             <div class="sidebar-sticky">
-                <h5 class="text-center py-3">Hausverwaltung</h5>
-                <ul class="nav flex-column">
+                <!-- Header der Sidebar -->
+                <div class="sidebar-header">
+                    Hausverwaltung
+                </div>
 
+                <!-- Navigation -->
+                <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link" href="overview.php"> <!-- Link zum Taskmanager -->
                             <i class="bi bi-list-task"></i> <!-- Icon für den Taskmanager -->
                             Taskmanager
                         </a>
-
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="settings.php"> <!-- Link zu den Einstellungen -->
